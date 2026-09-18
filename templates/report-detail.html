@@ -1,0 +1,238 @@
+{% extends "base.html" %}
+
+{% block title %}Report #{{ report.report_id if report else report_id }} — JanSetu AI{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 920px; padding-top: 2rem; padding-bottom: 3.5rem;">
+    
+    <!-- Back to Directory Navigation -->
+    <div style="margin-bottom: 1.25rem;">
+        <a href="{{ url_for('reports_page') }}" style="display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.88rem; font-weight: 600; color: var(--text-secondary);">
+            <span class="material-symbols-outlined icon-18">arrow_back</span>
+            <span>Back to Public Reports</span>
+        </a>
+    </div>
+
+    <!-- Official Grievance Dossier Card -->
+    <div class="card" style="box-shadow: var(--shadow-md); border-top: 4px solid var(--primary-blue);">
+        
+        <!-- Header: Report Meta & Status -->
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem; padding-bottom: 1.25rem; border-bottom: 1px solid var(--border-subtle);">
+            <div>
+                <div style="display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.76rem; font-weight: 700; color: var(--primary-blue); background: var(--primary-blue-subtle); padding: 2px 8px; border-radius: var(--radius-xs); margin-bottom: 0.4rem; border: 1px solid var(--primary-blue-border);">
+                    <span class="material-symbols-outlined icon-14">verified</span>
+                    <span>Official Grievance Dossier</span>
+                </div>
+                <h1 style="font-size: 2rem; color: var(--primary-navy); margin-bottom: 0.25rem; font-weight: 800;">
+                    Report #{{ report.report_id if report else report_id }}
+                </h1>
+                <div style="color: var(--text-tertiary); font-size: 0.82rem;">
+                    Registered: <strong>{{ report.created_at if report and report.created_at else '15 Sep 2026, 10:30 IST' }}</strong> &bull; Citizen Intake Engine
+                </div>
+            </div>
+
+            <!-- Severity & Current Status Badges -->
+            <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+                {% set sev = report.severity if report and report.severity else 'Medium' %}
+                <span class="badge {% if sev == 'Critical' %}badge-severity-critical{% elif sev == 'High' %}badge-severity-high{% else %}badge-severity-medium{% endif %}" style="font-size: 0.82rem; padding: 4px 10px;">
+                    {{ '⚠️' if sev == 'Critical' else '🔴' if sev == 'High' else '🟡' }} {{ sev }} Severity
+                </span>
+                <span class="badge badge-status-review" id="reportStatusBadge" style="font-size: 0.82rem; padding: 4px 10px;">
+                    {{ report.status if report and report.status else 'Submitted' }}
+                </span>
+            </div>
+        </div>
+
+        <!-- Realistic 5-Stage Linear Workflow Timeline (Section 14) -->
+        {% set cur_status = report.status if report and report.status else 'Submitted' %}
+        <div style="margin-bottom: 2rem; background: var(--bg-subtle); padding: 1.25rem 1.5rem; border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
+            <div style="font-size: 0.78rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 0.75rem; letter-spacing: 0.05em;">
+                Administrative Lifecycle Stage
+            </div>
+            
+            <div class="timeline-workflow">
+                <!-- Step 1: Submitted -->
+                <div class="timeline-step completed" id="timelineStep1">
+                    <div class="timeline-dot">✓</div>
+                    <span class="timeline-name">Submitted</span>
+                </div>
+
+                <!-- Step 2: AI Analyzed -->
+                <div class="timeline-step completed" id="timelineStep2">
+                    <div class="timeline-dot">✓</div>
+                    <span class="timeline-name">AI Analyzed</span>
+                </div>
+
+                <!-- Step 3: Under Review -->
+                <div class="timeline-step {% if cur_status in ['Under Review', 'Verified', 'In Progress', 'Resolved'] %}completed{% else %}active{% endif %}" id="timelineStep3">
+                    <div class="timeline-dot">{% if cur_status in ['Under Review', 'Verified', 'In Progress', 'Resolved'] %}✓{% else %}3{% endif %}</div>
+                    <span class="timeline-name">Under Review</span>
+                </div>
+
+                <!-- Step 4: In Progress -->
+                <div class="timeline-step {% if cur_status in ['Verified', 'In Progress', 'Resolved'] %}{% if cur_status == 'Resolved' %}completed{% else %}active{% endif %}{% endif %}" id="timelineStep4">
+                    <div class="timeline-dot">{% if cur_status == 'Resolved' %}✓{% else %}4{% endif %}</div>
+                    <span class="timeline-name">In Progress</span>
+                </div>
+
+                <!-- Step 5: Resolved -->
+                <div class="timeline-step {% if cur_status == 'Resolved' %}completed{% endif %}" id="timelineStep5">
+                    <div class="timeline-dot">{% if cur_status == 'Resolved' %}✓{% else %}5{% endif %}</div>
+                    <span class="timeline-name">Resolved</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Citizen Original Complaint -->
+        <div style="margin-bottom: 2rem;">
+            <h3 style="font-size: 1.05rem; color: var(--primary-navy); margin-bottom: 0.6rem; font-weight: 700; display: flex; align-items: center; gap: 0.4rem;">
+                <span class="material-symbols-outlined icon-18" style="color: var(--primary-blue);">record_voice_over</span>
+                <span>Original Citizen Complaint (नागरिक शिकायत)</span>
+            </h3>
+            
+            <div style="background: var(--bg-canvas); padding: 1.25rem; border-radius: var(--radius-md); border-left: 4px solid var(--accent-saffron); font-size: 1.02rem; line-height: 1.65; color: var(--text-primary); border: 1px solid var(--border-subtle); border-left-width: 4px;">
+                "{{ report.description if report and report.description else 'हमारे गांव में सड़क बहुत खराब है। बारिश के समय एम्बुलेंस भी नहीं आ पाती।' }}"
+            </div>
+            
+            <div style="margin-top: 0.85rem; display: flex; gap: 1.5rem; flex-wrap: wrap; font-size: 0.82rem; color: var(--text-secondary);">
+                <span>🌐 Language: <strong>{{ report.language if report and report.language else 'Hindi' }}</strong></span>
+                <span>📍 District: <strong>{{ report.district if report and report.district else 'Prayagraj' }}, {{ report.state if report and report.state else 'Uttar Pradesh' }}</strong></span>
+                <span>📌 Coordinates: <strong>{{ report.latitude if report and report.latitude else '25.4358' }}° N, {{ report.longitude if report and report.longitude else '81.8463' }}° E</strong></span>
+            </div>
+        </div>
+
+        <!-- Google Gemini AI Structured Analysis Card -->
+        <div style="background: #ffffff; border: 1px solid #c7d2fe; border-radius: var(--radius-md); padding: 1.5rem; margin-bottom: 2rem; box-shadow: var(--shadow-xs);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; border-bottom: 1px solid #e0e7ff; padding-bottom: 0.65rem;">
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <span class="material-symbols-outlined icon-22" style="color: #3730a3;">smart_toy</span>
+                    <h3 style="font-size: 1.1rem; color: var(--primary-navy); font-weight: 700;">
+                        Structured Infrastructure Extraction
+                    </h3>
+                </div>
+                <span class="badge badge-category" style="font-size: 0.72rem;">Google Gemini NLU</span>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem;">
+                <div>
+                    <div style="font-size: 0.75rem; color: var(--text-tertiary); text-transform: uppercase; font-weight: 600;">Infrastructure Category</div>
+                    <div style="font-weight: 700; font-size: 1.05rem; color: var(--primary-navy); margin-top: 2px;">
+                        {{ report.category if report and report.category else 'Roads' }}
+                    </div>
+                </div>
+
+                <div>
+                    <div style="font-size: 0.75rem; color: var(--text-tertiary); text-transform: uppercase; font-weight: 600;">Urgency Assessment</div>
+                    <div style="font-weight: 700; font-size: 1.05rem; color: var(--accent-red); margin-top: 2px;">
+                        {{ report.urgency if report and report.urgency else 'High' }}
+                    </div>
+                </div>
+
+                <div style="grid-column: 1 / -1;">
+                    <div style="font-size: 0.75rem; color: var(--text-tertiary); text-transform: uppercase; font-weight: 600;">Synthesized Problem Summary</div>
+                    <div style="font-weight: 600; font-size: 0.95rem; color: var(--text-primary); margin-top: 2px;">
+                        {{ report.problem_summary if report and report.problem_summary else 'Degraded infrastructure affecting local community commute and emergency accessibility.' }}
+                    </div>
+                </div>
+
+                <div style="grid-column: 1 / -1;">
+                    <div style="font-size: 0.75rem; color: var(--text-tertiary); text-transform: uppercase; font-weight: 600;">Critical Societal Impact</div>
+                    <div style="font-size: 0.92rem; color: var(--text-secondary); margin-top: 2px; line-height: 1.5;">
+                        {{ report.impact if report and report.impact else 'Public access, school transit, and ambulance connectivity severely impacted.' }}
+                    </div>
+                </div>
+
+                <div style="grid-column: 1 / -1;">
+                    <div style="font-size: 0.75rem; color: var(--text-tertiary); text-transform: uppercase; font-weight: 600; margin-bottom: 0.4rem;">Keywords Extracted</div>
+                    <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
+                        {% if report and report.keywords %}
+                            {% for kw in report.keywords %}
+                                <span class="badge badge-lang" style="font-size: 0.75rem;">#{{ kw }}</span>
+                            {% endfor %}
+                        {% else %}
+                            <span class="badge badge-lang">#roads</span>
+                            <span class="badge badge-lang">#potholes</span>
+                            <span class="badge badge-lang">#ambulance_access</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <div style="font-size: 0.74rem; color: var(--text-tertiary); margin-top: 1rem; border-top: 1px dashed var(--border-subtle); padding-top: 0.6rem; font-style: italic;">
+                * AI-generated analysis to assist public works engineers &mdash; not an automated financial authorization.
+            </div>
+        </div>
+
+        <!-- Administrative Workflow Actions -->
+        <div style="border-top: 1px solid var(--border-subtle); padding-top: 1.25rem;">
+            <h4 style="font-size: 0.9rem; margin-bottom: 0.75rem; color: var(--primary-navy); font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em;">
+                Administrative Actions & Status Transition
+            </h4>
+            
+            <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+                <button class="btn btn-outline btn-sm" onclick="updateReportStatus('{{ report.report_id if report else report_id }}', 'Verified')">
+                    <span class="material-symbols-outlined icon-16" style="color: var(--primary-blue);">check_circle</span>
+                    <span>Mark as Verified</span>
+                </button>
+                
+                <button class="btn btn-outline btn-sm" onclick="updateReportStatus('{{ report.report_id if report else report_id }}', 'In Progress')">
+                    <span class="material-symbols-outlined icon-16" style="color: var(--accent-amber);">bolt</span>
+                    <span>Mark as In Progress</span>
+                </button>
+                
+                <button class="btn btn-outline btn-sm" style="color: var(--accent-green); border-color: var(--accent-green);" onclick="updateReportStatus('{{ report.report_id if report else report_id }}', 'Resolved')">
+                    <span class="material-symbols-outlined icon-16">task_alt</span>
+                    <span>Mark as Resolved</span>
+                </button>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+async function updateReportStatus(reportId, newStatus) {
+    try {
+        const response = await fetch(`/api/reports/${reportId}`, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ status: newStatus })
+        });
+
+        const result = await response.json();
+        if (result.success) {
+            showToast(`Grievance #${reportId} status updated to "${newStatus}"`, 'success');
+            
+            const badge = document.getElementById('reportStatusBadge');
+            if (badge) {
+                badge.textContent = newStatus;
+                if (newStatus === 'Resolved') {
+                    badge.className = 'badge badge-status-resolved';
+                } else {
+                    badge.className = 'badge badge-status-review';
+                }
+            }
+
+            // Update timeline dot
+            if (newStatus === 'In Progress') {
+                const s4 = document.getElementById('timelineStep4');
+                if (s4) s4.className = 'timeline-step active';
+            } else if (newStatus === 'Resolved') {
+                const s4 = document.getElementById('timelineStep4');
+                const s5 = document.getElementById('timelineStep5');
+                if (s4) s4.className = 'timeline-step completed';
+                if (s5) s5.className = 'timeline-step completed';
+            }
+        } else {
+            showToast(result.error || 'Failed to update status', 'error');
+        }
+    } catch (err) {
+        showToast('Network error while updating report status', 'error');
+    }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}JanSetu AI — Citizen Infrastructure Intelligence Platform{% endblock %}</title>
+    <meta name="description" content="JanSetu AI bridges citizen infrastructure feedback in regional languages with transparent public works prioritization using multilingual AI and geospatial intelligence.">
+    
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Google Material Symbols Outlined -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+    
+    <!-- Main Design System Stylesheet -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    
+    <!-- Favicon -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏛️</text></svg>">
+    
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    <!-- Subtle Top Tricolor Gov Accent Line -->
+    <div class="gov-accent-line" aria-hidden="true"></div>
+
+    <!-- Official Portal Top Notice Banner -->
+    <div class="gov-top-bar">
+        <div class="gov-top-bar-inner">
+            <div class="gov-top-left">
+                <span class="gov-emblem-badge" data-i18n="topBarBanner">
+                    <span class="material-symbols-outlined icon-16">assured_workload</span>
+                    <strong>Digital Public Good</strong> &bull; Citizen Infrastructure Intelligence Platform
+                </span>
+            </div>
+            <div class="gov-top-right">
+                <span class="lang-label">Language / भाषा:</span>
+                <div class="lang-switch-group" role="group" aria-label="Language Selector">
+                    <button class="lang-btn active" data-lang="en">English</button>
+                    <button class="lang-btn" data-lang="hi">हिंदी</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Primary Navigation Header -->
+    <header class="navbar" id="siteNavbar">
+        <div class="navbar-container">
+            <a href="{{ url_for('index') }}" class="brand-logo" aria-label="JanSetu AI Homepage">
+                <div class="brand-symbol-box">
+                    <span class="brand-glyph">ज</span>
+                </div>
+                <div class="brand-text-group">
+                    <div class="brand-title">JanSetu <span class="brand-ai-tag">AI</span></div>
+                    <div class="brand-subtext" data-i18n="brandSubtext">Citizen Infrastructure Intelligence</div>
+                </div>
+            </a>
+
+            <!-- Mobile Hamburger Button -->
+            <button class="mobile-toggle" id="mobileMenuBtn" aria-label="Toggle navigation menu" aria-expanded="false">
+                <span class="material-symbols-outlined" id="mobileMenuIcon">menu</span>
+            </button>
+
+            <!-- Navigation Links -->
+            <nav class="nav-menu" id="navLinks">
+                <ul class="nav-list">
+                    <li>
+                        <a href="{{ url_for('index') }}" class="nav-link">
+                            <span class="material-symbols-outlined nav-icon">home</span>
+                            <span data-i18n="navHome">Home</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ url_for('citizen_portal') }}" class="nav-link">
+                            <span class="material-symbols-outlined nav-icon">campaign</span>
+                            <span data-i18n="navReport">Report Issue</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ url_for('reports_page') }}" class="nav-link">
+                            <span class="material-symbols-outlined nav-icon">format_list_bulleted</span>
+                            <span data-i18n="navReports">Public Reports</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ url_for('dashboard_page') }}" class="nav-link">
+                            <span class="material-symbols-outlined nav-icon">analytics</span>
+                            <span data-i18n="navAdmin">Admin Insights</span>
+                        </a>
+                    </li>
+                </ul>
+
+                <div class="nav-cta-wrapper">
+                    <a href="{{ url_for('citizen_portal') }}" class="btn btn-primary btn-sm nav-cta-btn">
+                        <span class="material-symbols-outlined icon-18">mic</span>
+                        <span data-i18n="navCta">Report Problem</span>
+                    </a>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="main-content" id="mainContent">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Global Professional Footer -->
+    <footer class="footer">
+        <div class="footer-container">
+            <div class="footer-col footer-col-brand">
+                <div class="footer-brand-header">
+                    <div class="brand-symbol-box sm">
+                        <span class="brand-glyph">ज</span>
+                    </div>
+                    <span class="footer-brand-title">JanSetu <strong>AI</strong></span>
+                </div>
+                <p class="footer-description">
+                    An open Digital Public Good prototype consolidating citizen development requests, analyzing multilingual feedback with Google Gemini, and guiding equitable public infrastructure prioritization.
+                </p>
+                <div class="footer-badges">
+                    <span class="gov-tag"><span class="material-symbols-outlined icon-14">verified</span> Open Civic Architecture</span>
+                    <span class="gov-tag"><span class="material-symbols-outlined icon-14">language</span> Hindi &bull; English</span>
+                </div>
+            </div>
+
+            <div class="footer-col">
+                <h4 class="footer-heading">Citizens</h4>
+                <ul class="footer-links">
+                    <li><a href="{{ url_for('citizen_portal') }}">Submit Local Grievance</a></li>
+                    <li><a href="{{ url_for('reports_page') }}">Track Public Reports</a></li>
+                    <li><a href="{{ url_for('citizen_portal') }}">Voice-Assisted Reporting</a></li>
+                    <li><a href="{{ url_for('index') }}#workflow">How Verification Works</a></li>
+                </ul>
+            </div>
+
+            <div class="footer-col">
+                <h4 class="footer-heading">Public Works & Planning</h4>
+                <ul class="footer-links">
+                    <li><a href="{{ url_for('dashboard_page') }}">Infrastructure Command Dashboard</a></li>
+                    <li><a href="{{ url_for('dashboard_page') }}#hotspots">Geospatial Demand Hotspots</a></li>
+                    <li><a href="{{ url_for('dashboard_page') }}#districtMatrix">District Gap Matrix</a></li>
+                    <li><a href="{{ url_for('dashboard_page') }}#insights">Automated AI Policy Synthesis</a></li>
+                </ul>
+            </div>
+
+            <div class="footer-col">
+                <h4 class="footer-heading">Technology Standards</h4>
+                <p class="footer-tech-text">
+                    Engineered with <strong>Google Gemini</strong> for zero-shot multilingual classification, <strong>OpenStreetMap</strong> and <strong>Leaflet</strong> for spatial analysis, and <strong>Firebase Firestore</strong> document storage.
+                </p>
+                <div class="footer-status-pill">
+                    <span class="status-indicator-dot"></span>
+                    <span>System Status: Fully Operational</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer-bottom">
+            <div class="footer-bottom-inner">
+                <div class="footer-copy">
+                    &copy; 2026 JanSetu AI &bull; Citizen Infrastructure Intelligence Platform. Digital Public Good.
+                </div>
+                <div class="footer-disclaimer">
+                    * Analytical indicators provide decision-support for planning and investigation; not an automated budgetary authorization.
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Global Toast Container -->
+    <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
+
+    <!-- Firebase Web Client Configuration -->
+    <script>
+    window.firebaseConfig = {
+        apiKey: "AIzaSyDIZRYmHeqZH-hgF9QuLUTjfF8u2tbOyw0",
+        authDomain: "jansetu-8ac9f.firebaseapp.com",
+        projectId: "jansetu-8ac9f",
+        storageBucket: "jansetu-8ac9f.firebasestorage.app",
+        messagingSenderId: "250472675587",
+        appId: "1:250472675587:web:08f5f4e4f702519d72d136"
+    };
+    </script>
+
+    <!-- Core Application Logic -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

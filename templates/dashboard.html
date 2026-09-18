@@ -1,0 +1,367 @@
+{% extends "base.html" %}
+
+{% block title %}Citizen Infrastructure Intelligence Dashboard — JanSetu AI{% endblock %}
+
+{% block extra_head %}
+<!-- Leaflet CSS for OpenStreetMap -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+<style>
+.osm-marker-pin {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+    border: 2px solid white;
+    cursor: pointer;
+    transition: transform 0.15s ease;
+}
+.osm-marker-pin:hover {
+    transform: scale(1.15);
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container" style="padding-top: 1.75rem; padding-bottom: 3.5rem;">
+    
+    <!-- Command Center Header Bar -->
+    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 1.75rem; flex-wrap: wrap; gap: 1rem; border-bottom: 1px solid var(--border-subtle); padding-bottom: 1.25rem;">
+        <div>
+            <div style="display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.78rem; font-weight: 600; color: var(--primary-blue); background: var(--primary-blue-subtle); padding: 2px 8px; border-radius: var(--radius-xs); margin-bottom: 0.4rem; border: 1px solid var(--primary-blue-border);">
+                <span class="material-symbols-outlined icon-14">monitoring</span>
+                <span>Regional Command Center &bull; Uttar Pradesh</span>
+            </div>
+            <h1 style="font-size: 2.1rem; color: var(--primary-navy); margin-bottom: 0.2rem; font-weight: 800;">
+                Citizen Infrastructure Intelligence
+            </h1>
+            <p style="color: var(--text-secondary); font-size: 0.92rem;">
+                Monitoring citizen-reported infrastructure needs across regions with explainable AI indicators.
+            </p>
+        </div>
+        
+        <div style="display: flex; gap: 0.75rem; align-items: center;">
+            <a href="{{ url_for('reports_page') }}" class="btn btn-outline btn-sm">
+                <span class="material-symbols-outlined icon-18">format_list_bulleted</span>
+                <span>All Reports Directory</span>
+            </a>
+            <button id="refreshDataBtn" class="btn btn-primary btn-sm" onclick="location.reload()">
+                <span class="material-symbols-outlined icon-18">refresh</span>
+                <span>Refresh Live Telemetry</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- KPI Metric Cards Grid (With Count-Up Typography) -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.25rem; margin-bottom: 2rem;">
+        
+        <!-- Total Reports -->
+        <div class="card" style="padding: 1.25rem; border-left: 4px solid var(--primary-blue);">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                <div>
+                    <div style="color: var(--text-tertiary); font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">Total Reports</div>
+                    <div style="font-size: 2.4rem; font-weight: 800; color: var(--primary-navy); line-height: 1.1; margin: 0.35rem 0;" id="kpiTotalReports">0</div>
+                </div>
+                <div style="width: 36px; height: 36px; border-radius: var(--radius-md); background: var(--primary-blue-subtle); color: var(--primary-blue); display: flex; align-items: center; justify-content: center;">
+                    <span class="material-symbols-outlined icon-20">inventory_2</span>
+                </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 0.35rem; font-size: 0.78rem; color: var(--accent-green); font-weight: 600;">
+                <span class="material-symbols-outlined icon-16">trending_up</span>
+                <span>+12% active this week</span>
+            </div>
+        </div>
+
+        <!-- High Priority -->
+        <div class="card" style="padding: 1.25rem; border-left: 4px solid var(--accent-red);">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                <div>
+                    <div style="color: var(--text-tertiary); font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">High Priority</div>
+                    <div style="font-size: 2.4rem; font-weight: 800; color: var(--accent-red); line-height: 1.1; margin: 0.35rem 0;" id="kpiHighPriority">0</div>
+                </div>
+                <div style="width: 36px; height: 36px; border-radius: var(--radius-md); background: var(--accent-red-subtle); color: var(--accent-red); display: flex; align-items: center; justify-content: center;">
+                    <span class="material-symbols-outlined icon-20">priority_high</span>
+                </div>
+            </div>
+            <div style="font-size: 0.78rem; color: var(--text-tertiary); display: flex; align-items: center; gap: 0.35rem;">
+                <span class="material-symbols-outlined icon-16" style="color: var(--accent-red);">warning</span>
+                <span>Critical intervention required</span>
+            </div>
+        </div>
+
+        <!-- Active Hotspots -->
+        <div class="card" style="padding: 1.25rem; border-left: 4px solid var(--accent-saffron);">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                <div>
+                    <div style="color: var(--text-tertiary); font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">Active Hotspots</div>
+                    <div style="font-size: 2.4rem; font-weight: 800; color: var(--accent-saffron); line-height: 1.1; margin: 0.35rem 0;" id="kpiHotspots">0</div>
+                </div>
+                <div style="width: 36px; height: 36px; border-radius: var(--radius-md); background: var(--accent-saffron-subtle); color: var(--accent-saffron); display: flex; align-items: center; justify-content: center;">
+                    <span class="material-symbols-outlined icon-20">radar</span>
+                </div>
+            </div>
+            <div style="font-size: 0.78rem; color: var(--text-tertiary);">
+                <span>High demand clusters detected</span>
+            </div>
+        </div>
+
+        <!-- Resolved -->
+        <div class="card" style="padding: 1.25rem; border-left: 4px solid var(--accent-green);">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                <div>
+                    <div style="color: var(--text-tertiary); font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">Resolved Issues</div>
+                    <div style="font-size: 2.4rem; font-weight: 800; color: var(--accent-green); line-height: 1.1; margin: 0.35rem 0;" id="kpiResolved">0</div>
+                </div>
+                <div style="width: 36px; height: 36px; border-radius: var(--radius-md); background: var(--accent-green-subtle); color: var(--accent-green); display: flex; align-items: center; justify-content: center;">
+                    <span class="material-symbols-outlined icon-20">task_alt</span>
+                </div>
+            </div>
+            <div style="font-size: 0.78rem; color: var(--accent-green); font-weight: 600;" id="kpiResolutionRate">
+                13.3% resolution rate
+            </div>
+        </div>
+    </div>
+
+    <!-- Dedicated AI Infrastructure Insight Card (Section 12) -->
+    <div id="insights" class="card" style="background: linear-gradient(135deg, #f0f7ff 0%, #f5f3ff 100%); border-color: #c7d2fe; margin-bottom: 2rem;">
+        <div style="display: flex; align-items: flex-start; gap: 1.25rem;">
+            <div style="width: 44px; height: 44px; border-radius: var(--radius-md); background: #ffffff; border: 1px solid #c7d2fe; display: flex; align-items: center; justify-content: center; color: #3730a3; flex-shrink: 0; box-shadow: var(--shadow-xs);">
+                <span class="material-symbols-outlined icon-24">smart_toy</span>
+            </div>
+            <div style="flex: 1;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem; flex-wrap: wrap; gap: 0.5rem;">
+                    <h3 style="font-size: 1.15rem; color: #1e3a8a; font-weight: 700;">
+                        AI Infrastructure Insight
+                    </h3>
+                    <span class="badge" style="background: #e0e7ff; color: #3730a3; font-size: 0.72rem; border: 1px solid #c7d2fe;">
+                        Google Gemini Analytics Engine
+                    </span>
+                </div>
+                <p id="aiInsightText" style="font-size: 0.95rem; color: #334155; line-height: 1.6; margin-bottom: 0.75rem;">
+                    Analyzing multi-district citizen feedback alongside demographic and baseline infrastructure indicators...
+                </p>
+                <div style="font-size: 0.75rem; color: var(--text-tertiary); font-style: italic;">
+                    * Analytical indicator for planning support &mdash; not an official funding decision.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Primary Layout: Map as Main Visual (Left 65%) + Need Indicator & Live Activity (Right 35%) -->
+    <div style="display: grid; grid-template-columns: 1.8fr 1fr; gap: 1.5rem; margin-bottom: 2rem;" id="hotspots">
+        
+        <!-- Main Interactive GIS Map Container -->
+        <div class="card" style="padding: 1.25rem; display: flex; flex-direction: column;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.85rem;">
+                <div>
+                    <h3 style="font-size: 1.15rem; color: var(--primary-navy); font-weight: 700; display: flex; align-items: center; gap: 0.4rem;">
+                        <span class="material-symbols-outlined icon-20" style="color: var(--primary-blue);">map</span>
+                        <span>Geospatial Demand Map</span>
+                    </h3>
+                    <div style="font-size: 0.78rem; color: var(--text-tertiary);">
+                        Citizen grievances and dynamic demand hotspot zones plotted across Uttar Pradesh
+                    </div>
+                </div>
+                <span class="badge badge-category" style="font-size: 0.72rem;">
+                    Leaflet &bull; OpenStreetMap
+                </span>
+            </div>
+
+            <!-- Leaflet Map Canvas with Floating Legend -->
+            <div class="map-wrapper" style="height: 480px; position: relative;">
+                <div id="dashboardMap" style="width: 100%; height: 100%; background: #f1f5f9;"></div>
+
+                <!-- Small Floating Legend (Section 10) -->
+                <div class="map-floating-legend">
+                    <div class="legend-title">
+                        <span>MAP LEGEND</span>
+                        <span class="material-symbols-outlined icon-16" style="color: var(--text-tertiary);">layers</span>
+                    </div>
+                    <div class="legend-grid">
+                        <div class="legend-item"><span>🛣️</span> <span>Roads</span></div>
+                        <div class="legend-item"><span>💧</span> <span>Water</span></div>
+                        <div class="legend-item"><span>🏥</span> <span>Healthcare</span></div>
+                        <div class="legend-item"><span>🏫</span> <span>Education</span></div>
+                        <div class="legend-item"><span>💡</span> <span>Electricity</span></div>
+                        <div class="legend-item"><span>📶</span> <span>Connectivity</span></div>
+                    </div>
+                    <div style="margin-top: 0.5rem; pt-0.5; border-top: 1px solid var(--border-subtle); display: flex; gap: 0.75rem; font-size: 0.72rem; color: var(--text-tertiary);">
+                        <span><strong style="color: #dc2626;">🔴</strong> Critical</span>
+                        <span><strong style="color: #ea580c;">🟠</strong> High</span>
+                        <span><span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:rgba(239,68,68,0.4); border:1px solid #dc2626; vertical-align:middle;"></span> Hotspot</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Side: AI Infrastructure Need Indicator & Live Activity -->
+        <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+            
+            <!-- AI Infrastructure Need Indicator Card (4 Factors) -->
+            <div class="card">
+                <div class="card-header" style="margin-bottom: 0.85rem; padding-bottom: 0.65rem;">
+                    <div>
+                        <h4 style="font-size: 1rem; color: var(--primary-navy); font-weight: 700;">
+                            AI Infrastructure Need Indicator
+                        </h4>
+                        <div style="font-size: 0.72rem; color: var(--text-tertiary);">Top Priority Hotspot Breakdown</div>
+                    </div>
+                    <span id="needIndicatorBadge" class="badge badge-severity-high">Hotspot #1</span>
+                </div>
+
+                <!-- Factor 1: Demand Density -->
+                <div style="margin-bottom: 0.85rem;">
+                    <div style="display: flex; justify-content: space-between; font-size: 0.82rem; margin-bottom: 0.25rem;">
+                        <span style="color: var(--text-secondary);">Citizen Demand Density (30%)</span>
+                        <strong id="needDensityVal">82 / 100</strong>
+                    </div>
+                    <div style="background: var(--bg-subtle); height: 6px; border-radius: var(--radius-full); overflow: hidden;">
+                        <div id="needDensityBar" style="background: var(--accent-saffron); width: 82%; height: 100%;"></div>
+                    </div>
+                </div>
+
+                <!-- Factor 2: Infrastructure Gap -->
+                <div style="margin-bottom: 0.85rem;">
+                    <div style="display: flex; justify-content: space-between; font-size: 0.82rem; margin-bottom: 0.25rem;">
+                        <span style="color: var(--text-secondary);">Infrastructure Gap Indicator (25%)</span>
+                        <strong id="needGapVal">88 / 100</strong>
+                    </div>
+                    <div style="background: var(--bg-subtle); height: 6px; border-radius: var(--radius-full); overflow: hidden;">
+                        <div id="needGapBar" style="background: var(--accent-red); width: 88%; height: 100%;"></div>
+                    </div>
+                </div>
+
+                <!-- Factor 3: Population Impact -->
+                <div style="margin-bottom: 0.85rem;">
+                    <div style="display: flex; justify-content: space-between; font-size: 0.82rem; margin-bottom: 0.25rem;">
+                        <span style="color: var(--text-secondary);">Population Impact Weight (25%)</span>
+                        <strong id="needPopVal">71 / 100</strong>
+                    </div>
+                    <div style="background: var(--bg-subtle); height: 6px; border-radius: var(--radius-full); overflow: hidden;">
+                        <div id="needPopBar" style="background: var(--primary-blue); width: 71%; height: 100%;"></div>
+                    </div>
+                </div>
+
+                <!-- Factor 4: Severity Weight -->
+                <div style="margin-bottom: 1rem;">
+                    <div style="display: flex; justify-content: space-between; font-size: 0.82rem; margin-bottom: 0.25rem;">
+                        <span style="color: var(--text-secondary);">Severity Weight (20%)</span>
+                        <strong id="needSevVal">75 / 100</strong>
+                    </div>
+                    <div style="background: var(--bg-subtle); height: 6px; border-radius: var(--radius-full); overflow: hidden;">
+                        <div id="needSevBar" style="background: #b91c1c; width: 75%; height: 100%;"></div>
+                    </div>
+                </div>
+
+                <!-- Composite Score Box -->
+                <div style="padding-top: 0.75rem; border-top: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-weight: 700; font-size: 0.9rem; color: var(--primary-navy);">Overall Need Score:</span>
+                    <span id="needScoreVal" style="font-size: 1.35rem; font-weight: 800; color: var(--accent-red);">80.2 / 100</span>
+                </div>
+            </div>
+
+            <!-- Recent Citizen Activity Feed (Section 13) -->
+            <div class="card" style="flex: 1; padding: 1.15rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border-subtle);">
+                    <h4 style="font-size: 0.92rem; color: var(--primary-navy); font-weight: 700; display: flex; align-items: center; gap: 0.35rem;">
+                        <span class="material-symbols-outlined icon-16" style="color: var(--primary-blue);">history</span>
+                        <span>Recent Citizen Reports</span>
+                    </h4>
+                    <span class="badge badge-category" style="font-size: 0.68rem;">Live Stream</span>
+                </div>
+                <div id="recentActivityList" style="display: flex; flex-direction: column; gap: 0.65rem;">
+                    <!-- Dynamically populated via dashboard.js -->
+                    <div style="text-align: center; padding: 1rem 0; color: var(--text-tertiary); font-size: 0.82rem;">
+                        Loading recent reports...
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Data Visualizations: Chart.js Analytics (Section 11) -->
+    <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 1.5rem; margin-bottom: 2rem;">
+        
+        <!-- Chart 1: Reports by Category -->
+        <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <div>
+                    <h4 style="font-size: 1rem; color: var(--primary-navy); font-weight: 700;">Reports by Infrastructure Category</h4>
+                    <div style="font-size: 0.75rem; color: var(--text-tertiary);">Distribution of citizen grievances across public domains</div>
+                </div>
+                <span class="badge badge-category" style="font-size: 0.7rem;">Domain Breakdown</span>
+            </div>
+            <div style="height: 250px; position: relative;">
+                <canvas id="categoryChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Chart 2: Severity Distribution -->
+        <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <div>
+                    <h4 style="font-size: 1rem; color: var(--primary-navy); font-weight: 700;">Severity Distribution</h4>
+                    <div style="font-size: 0.75rem; color: var(--text-tertiary);">Proportion of critical, high, and medium grievances</div>
+                </div>
+                <span class="badge badge-category" style="font-size: 0.7rem;">Urgency Profile</span>
+            </div>
+            <div style="height: 250px; position: relative; display: flex; align-items: center; justify-content: center;">
+                <canvas id="severityChart"></canvas>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- District Demand Rate & Infrastructure Gap Matrix Table (Section 15 & 16) -->
+    <div id="districtMatrix" class="card" style="padding: 0; overflow: hidden; margin-bottom: 2rem;">
+        <div style="padding: 1.15rem 1.25rem; border-bottom: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+            <div>
+                <h3 style="font-size: 1.1rem; color: var(--primary-navy); font-weight: 700; margin-bottom: 0.2rem;">
+                    District Demand Rate & Infrastructure Gap Matrix
+                </h3>
+                <span style="font-size: 0.78rem; color: var(--text-tertiary);">
+                    Normalized citizen demand per 10k population joined with baseline infrastructure deficit indices.
+                </span>
+            </div>
+            <span class="badge badge-category">Public Data Indices</span>
+        </div>
+        
+        <div class="table-container" style="border: none; border-radius: 0;">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>District</th>
+                        <th>Population</th>
+                        <th>Citizen Reports</th>
+                        <th>Demand Rate (per 10k)</th>
+                        <th>Baseline Index</th>
+                        <th>Infrastructure Gap</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="districtTableBody">
+                    <tr>
+                        <td colspan="7" style="text-align: center; padding: 2rem; color: var(--text-tertiary);">
+                            ⏳ Calculating district demand rates and infrastructure baselines...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<!-- Leaflet JS for OpenStreetMap -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<!-- Chart.js CDN for Professional Data Visualization -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<!-- Dashboard Controller Script -->
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+{% endblock %}

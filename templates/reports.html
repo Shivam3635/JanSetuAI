@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+
+{% block title %}Public Infrastructure Reports Directory — JanSetu AI{% endblock %}
+
+{% block content %}
+<div class="container" style="padding-top: 2rem; padding-bottom: 3.5rem;">
+    
+    <!-- Directory Header -->
+    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 1.75rem; flex-wrap: wrap; gap: 1rem; border-bottom: 1px solid var(--border-subtle); padding-bottom: 1.25rem;">
+        <div>
+            <div style="display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.78rem; font-weight: 600; color: var(--primary-blue); background: var(--primary-blue-subtle); padding: 2px 8px; border-radius: var(--radius-xs); margin-bottom: 0.4rem; border: 1px solid var(--primary-blue-border);">
+                <span class="material-symbols-outlined icon-14">database</span>
+                <span>Open Grievance Registry &bull; Digital Public Records</span>
+            </div>
+            <h1 style="font-size: 2.1rem; color: var(--primary-navy); margin-bottom: 0.2rem; font-weight: 800;">
+                Public Infrastructure Reports
+            </h1>
+            <p style="color: var(--text-secondary); font-size: 0.92rem;">
+                Search and audit citizen infrastructure development requests classified and structured with Gemini AI.
+            </p>
+        </div>
+        <div>
+            <span id="reportsCountBadge" class="badge badge-category" style="font-size: 0.85rem; padding: 0.5rem 0.9rem;">
+                Loading reports...
+            </span>
+        </div>
+    </div>
+
+    <!-- Enterprise Search & Multi-Facet Filters Bar (Section 15) -->
+    <div class="card" style="padding: 1.25rem; margin-bottom: 1.5rem; background: var(--bg-surface);">
+        <div style="display: grid; grid-template-columns: 2fr repeat(auto-fit, minmax(140px, 1fr)) auto; gap: 0.75rem; align-items: end;">
+            
+            <!-- Full Text Search Input -->
+            <div>
+                <label for="searchInput" class="form-label" style="font-size: 0.78rem; margin-bottom: 0.3rem;">
+                    Search Grievances / खोजें:
+                </label>
+                <div style="position: relative;">
+                    <span class="material-symbols-outlined icon-18" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--text-tertiary);">search</span>
+                    <input type="text" id="searchInput" placeholder="Search by text, district, ID, keyword..." style="padding-left: 34px; font-size: 0.88rem;">
+                </div>
+            </div>
+
+            <!-- Category Filter -->
+            <div>
+                <label for="categoryFilter" class="form-label" style="font-size: 0.78rem; margin-bottom: 0.3rem;">Category</label>
+                <select id="categoryFilter" style="font-size: 0.85rem;">
+                    <option value="">All Categories</option>
+                    <option value="Roads">🛣️ Roads</option>
+                    <option value="Drinking Water">💧 Drinking Water</option>
+                    <option value="Healthcare">🏥 Healthcare</option>
+                    <option value="Education">🏫 Education</option>
+                    <option value="Electricity">💡 Electricity</option>
+                    <option value="Sanitation">🧹 Sanitation</option>
+                    <option value="Drainage">🌊 Drainage</option>
+                    <option value="Digital Connectivity">📶 Connectivity</option>
+                    <option value="Public Transport">🚌 Transport</option>
+                    <option value="Other">📌 Other</option>
+                </select>
+            </div>
+
+            <!-- District Filter -->
+            <div>
+                <label for="districtFilter" class="form-label" style="font-size: 0.78rem; margin-bottom: 0.3rem;">District</label>
+                <select id="districtFilter" style="font-size: 0.85rem;">
+                    <option value="">All Districts</option>
+                    <option value="Prayagraj">Prayagraj</option>
+                    <option value="Lucknow">Lucknow</option>
+                    <option value="Varanasi">Varanasi</option>
+                    <option value="Gorakhpur">Gorakhpur</option>
+                    <option value="Kanpur Nagar">Kanpur Nagar</option>
+                    <option value="Agra">Agra</option>
+                    <option value="Meerut">Meerut</option>
+                    <option value="Jhansi">Jhansi</option>
+                    <option value="Mirzapur">Mirzapur</option>
+                </select>
+            </div>
+
+            <!-- Severity Filter -->
+            <div>
+                <label for="severityFilter" class="form-label" style="font-size: 0.78rem; margin-bottom: 0.3rem;">Severity</label>
+                <select id="severityFilter" style="font-size: 0.85rem;">
+                    <option value="">All Severities</option>
+                    <option value="Critical">🔴 Critical</option>
+                    <option value="High">🟠 High</option>
+                    <option value="Medium">🟡 Medium</option>
+                    <option value="Low">🟢 Low</option>
+                </select>
+            </div>
+
+            <!-- Status Filter -->
+            <div>
+                <label for="statusFilter" class="form-label" style="font-size: 0.78rem; margin-bottom: 0.3rem;">Status</label>
+                <select id="statusFilter" style="font-size: 0.85rem;">
+                    <option value="">All Statuses</option>
+                    <option value="Submitted">Submitted</option>
+                    <option value="Under Review">Under Review</option>
+                    <option value="Verified">Verified</option>
+                    <option value="In Progress">In Progress</option>
+                    <option value="Resolved">Resolved</option>
+                </select>
+            </div>
+
+            <!-- Language Filter -->
+            <div>
+                <label for="languageFilter" class="form-label" style="font-size: 0.78rem; margin-bottom: 0.3rem;">Language</label>
+                <select id="languageFilter" style="font-size: 0.85rem;">
+                    <option value="">All Languages</option>
+                    <option value="Hindi">🇮🇳 Hindi</option>
+                    <option value="English">🌐 English</option>
+                </select>
+            </div>
+
+            <!-- Clear Filters Button -->
+            <div>
+                <button type="button" id="resetFiltersBtn" class="btn btn-outline btn-sm" style="height: 38px; width: 100%;">
+                    <span class="material-symbols-outlined icon-16">filter_alt_off</span>
+                    <span>Clear</span>
+                </button>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Enterprise Reports Table (Section 16) -->
+    <div class="table-container" style="box-shadow: var(--shadow-sm);">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th style="width: 100px;">Report ID</th>
+                    <th style="width: 140px;">Category</th>
+                    <th>Citizen Complaint / Synthesized Summary</th>
+                    <th style="width: 130px;">District</th>
+                    <th style="width: 110px;">Severity</th>
+                    <th style="width: 110px;">Status</th>
+                    <th style="width: 90px; text-align: right;">Action</th>
+                </tr>
+            </thead>
+            <tbody id="reportsTableBody">
+                <tr>
+                    <td colspan="7" style="text-align: center; padding: 2.5rem; color: var(--text-tertiary);">
+                        <div style="display: flex; flex-direction: column; align-items: center; gap: 0.5rem;">
+                            <span class="material-symbols-outlined icon-32" style="color: var(--primary-blue);">sync</span>
+                            <span>Loading citizen infrastructure grievances...</span>
+                        </div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/reports.js') }}"></script>
+{% endblock %}

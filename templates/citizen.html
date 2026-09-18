@@ -1,0 +1,325 @@
+{% extends "base.html" %}
+
+{% block title %}Report an Infrastructure Problem — JanSetu AI{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 860px; padding-top: 2.5rem; padding-bottom: 3.5rem;">
+    
+    <!-- Header: Civic Trust & Simplicity -->
+    <div style="margin-bottom: 2rem; text-align: center;">
+        <div style="display: inline-flex; align-items: center; gap: 0.4rem; background: var(--primary-blue-subtle); color: var(--primary-blue); font-size: 0.78rem; font-weight: 600; padding: 3px 10px; border-radius: var(--radius-full); margin-bottom: 0.75rem; border: 1px solid var(--primary-blue-border);">
+            <span class="material-symbols-outlined icon-16">public</span>
+            <span>Digital Public Grievance Intake</span>
+        </div>
+        <h1 style="font-size: 2.2rem; color: var(--primary-navy); margin-bottom: 0.5rem; font-weight: 800;">
+            Report a Local Problem
+        </h1>
+        <p style="color: var(--text-secondary); font-size: 0.95rem; max-width: 600px; margin: 0 auto;">
+            Submit your community infrastructure issue in Hindi or English. Our AI analyzes and structures your grievance for municipal and district prioritization.
+        </p>
+    </div>
+
+    <!-- Guided 3-Step Flow Progress Header -->
+    <div class="form-stepper" aria-label="Submission Steps">
+        <div class="step-item active" id="stepIndicator1">
+            <div class="step-circle">1</div>
+            <div class="step-label">1. Describe Problem</div>
+        </div>
+        <div class="step-item" id="stepIndicator2">
+            <div class="step-circle">2</div>
+            <div class="step-label">2. Location Details</div>
+        </div>
+        <div class="step-item" id="stepIndicator3">
+            <div class="step-circle">3</div>
+            <div class="step-label">3. Review & Submit</div>
+        </div>
+    </div>
+
+    <!-- Form Container Card -->
+    <div class="card" style="box-shadow: var(--shadow-md); border-top: 4px solid var(--primary-blue);">
+        
+        <!-- Error Alert Container -->
+        <div id="formAlert" style="display: none; padding: 0.85rem 1rem; border-radius: var(--radius-sm); background: var(--accent-red-subtle); border: 1px solid var(--accent-red-border); color: #991b1b; font-size: 0.88rem; margin-bottom: 1.5rem; align-items: center; gap: 0.5rem;">
+            <span class="material-symbols-outlined icon-20">error</span>
+            <span id="formAlertText"></span>
+        </div>
+
+        <form id="citizenReportForm" novalidate>
+            
+            <!-- STEP 1: Tell us what is wrong -->
+            <div class="form-step-section" id="stepSection1" style="margin-bottom: 2rem;">
+                <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 1rem; border-bottom: 1px solid var(--border-subtle); padding-bottom: 0.6rem;">
+                    <div>
+                        <h2 style="font-size: 1.15rem; color: var(--primary-navy); font-weight: 700;">
+                            Step 1: Tell us what is wrong / समस्या बताएं
+                        </h2>
+                        <div class="form-hint" style="margin-top: 2px;">
+                            You can write or speak in Hindi, English, or other regional languages.
+                        </div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <span style="font-size: 0.78rem; font-weight: 600; color: var(--text-tertiary);">Language:</span>
+                        <select id="reportLanguage" name="language" style="padding: 4px 8px; font-size: 0.82rem; border-radius: var(--radius-xs); border: 1px solid var(--border-medium); width: auto;">
+                            <option value="Hindi" selected>🇮🇳 Hindi (हिंदी)</option>
+                            <option value="English">🌐 English</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Realistic Microphone & Voice Component -->
+                <div class="voice-input-card">
+                    <div class="voice-status-wrapper">
+                        <button type="button" id="voiceToggleBtn" class="btn btn-outline" style="border-radius: var(--radius-full); width: 44px; height: 44px; padding: 0; display: inline-flex; align-items: center; justify-content: center; position: relative;">
+                            <span class="material-symbols-outlined icon-24" id="micIcon" style="color: var(--primary-blue);">mic</span>
+                        </button>
+                        <div>
+                            <div class="voice-status-indicator" id="voiceStatusLabel">
+                                <span id="voiceStatusText">Click microphone to speak (बोलकर बताएं)</span>
+                            </div>
+                            <div style="font-size: 0.76rem; color: var(--text-tertiary);" id="voiceSubLabel">
+                                Browser Web Speech API &bull; No typing required
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Live Waveform & Timer (Active during recording) -->
+                    <div style="display: flex; align-items: center; gap: 1rem;">
+                        <div class="audio-waveform" id="audioWaveform" style="display: none;">
+                            <div class="wave-bar"></div>
+                            <div class="wave-bar"></div>
+                            <div class="wave-bar"></div>
+                            <div class="wave-bar"></div>
+                            <div class="wave-bar"></div>
+                        </div>
+                        <div id="recordingTimer" style="display: none; font-variant-numeric: tabular-nums; font-weight: 700; font-size: 0.88rem; color: var(--accent-red);">
+                            00:00
+                        </div>
+                        <button type="button" id="clearVoiceBtn" class="btn btn-secondary btn-sm" style="display: none;">
+                            <span class="material-symbols-outlined icon-16">refresh</span>
+                            <span>Clear</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Large Textarea -->
+                <div class="form-group">
+                    <label for="problemDescription" class="form-label">
+                        Problem Description / शिकायत का विवरण:
+                    </label>
+                    <textarea id="problemDescription" name="description" rows="5" placeholder="उदाहरण: हमारे गांव में मुख्य सड़क पूरी तरह टूट गई है। बारिश के समय गड्ढों में पानी भरने से एम्बुलेंस और स्कूल बसें नहीं आ पातीं..." required minlength="10"></textarea>
+                    <div style="display: flex; justify-content: space-between; margin-top: 0.35rem; font-size: 0.75rem; color: var(--text-tertiary);">
+                        <span>Minimum 10 characters required</span>
+                        <span id="charCount">0 characters</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- STEP 2: Where is the issue? -->
+            <div class="form-step-section" id="stepSection2" style="margin-bottom: 2rem;">
+                <div style="margin-bottom: 1rem; border-bottom: 1px solid var(--border-subtle); padding-bottom: 0.6rem;">
+                    <h2 style="font-size: 1.15rem; color: var(--primary-navy); font-weight: 700;">
+                        Step 2: Where is the issue? / स्थान विवरण
+                    </h2>
+                    <div class="form-hint" style="margin-top: 2px;">
+                        Provide geographic context so district authorities can identify the exact bottleneck.
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 1.25rem; margin-bottom: 1rem;">
+                    <div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
+                            <label for="districtInput" class="form-label" style="margin-bottom: 0;">District / जिला:</label>
+                            <button type="button" id="detectLocationBtn" class="btn btn-outline btn-sm" style="font-size: 0.78rem; padding: 3px 8px;">
+                                <span class="material-symbols-outlined icon-16" style="color: var(--primary-blue);">my_location</span>
+                                <span>Detect GPS</span>
+                            </button>
+                        </div>
+                        <input type="text" id="districtInput" name="district" placeholder="e.g. Prayagraj, Lucknow, Varanasi, Gorakhpur" value="Prayagraj" required>
+                    </div>
+
+                    <div>
+                        <label for="stateInput" class="form-label">State / राज्य:</label>
+                        <input type="text" id="stateInput" name="state" value="Uttar Pradesh" readonly style="background: var(--bg-subtle);">
+                    </div>
+                </div>
+
+                <!-- GPS Coordinates Display -->
+                <div style="background: var(--bg-subtle); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 0.75rem 1rem; display: flex; justify-content: space-between; align-items: center; font-size: 0.82rem;">
+                    <div style="display: flex; align-items: center; gap: 0.5rem; color: var(--text-secondary);">
+                        <span class="material-symbols-outlined icon-18" style="color: var(--text-tertiary);">pin_drop</span>
+                        <span>Latitude: <strong id="latDisplay">25.4358° N</strong> &bull; Longitude: <strong id="lonDisplay">81.8463° E</strong></span>
+                    </div>
+                    <span class="badge badge-category" style="font-size: 0.7rem;">Verified Centroid</span>
+                </div>
+                <input type="hidden" id="latitudeInput" name="latitude" value="25.4358">
+                <input type="hidden" id="longitudeInput" name="longitude" value="81.8463">
+            </div>
+
+            <!-- STEP 3: Review & Category Classification -->
+            <div class="form-step-section" id="stepSection3" style="margin-bottom: 2rem;">
+                <div style="margin-bottom: 1rem; border-bottom: 1px solid var(--border-subtle); padding-bottom: 0.6rem;">
+                    <h2 style="font-size: 1.15rem; color: var(--primary-navy); font-weight: 700;">
+                        Step 3: Review & Submit / श्रेणी और सबमिशन
+                    </h2>
+                    <div class="form-hint" style="margin-top: 2px;">
+                        Gemini AI will automatically classify the category and severity if set to Auto-Detect.
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="categorySelect" class="form-label">
+                        Infrastructure Category / श्रेणी:
+                    </label>
+                    <select id="categorySelect" name="category">
+                        <option value="auto" selected>✨ Auto-detect with Gemini AI (स्वचालित पहचान)</option>
+                        <option value="Roads">🛣️ Roads (सड़कें व पुल)</option>
+                        <option value="Drinking Water">💧 Drinking Water (पेयजल आपूर्ति)</option>
+                        <option value="Healthcare">🏥 Healthcare (प्राथमिक स्वास्थ्य केंद्र)</option>
+                        <option value="Education">🏫 Education (स्कूल व शिक्षण संस्थान)</option>
+                        <option value="Electricity">💡 Electricity (विद्युत व ट्रांसफार्मर)</option>
+                        <option value="Sanitation">🧹 Sanitation (कचरा प्रबंधन)</option>
+                        <option value="Drainage">🌊 Drainage (नालियां व जल निकासी)</option>
+                        <option value="Digital Connectivity">📶 Digital Connectivity (इंटरनेट व मोबाइल नेटवर्क)</option>
+                        <option value="Public Transport">🚌 Public Transport (बस व परिवहन)</option>
+                        <option value="Other">📌 Other (अन्य सार्वजनिक कार्य)</option>
+                    </select>
+                </div>
+
+                <!-- Submit Button -->
+                <button type="submit" id="submitReportBtn" class="btn btn-primary btn-lg" style="width: 100%; justify-content: center; margin-top: 1rem;">
+                    <span class="material-symbols-outlined icon-20">send</span>
+                    <span id="submitBtnText">Submit Grievance / शिकायत दर्ज करें</span>
+                </button>
+            </div>
+        </form>
+
+        <!-- Realistic Gemini AI Step-by-Step Processing Overlay -->
+        <div id="aiProcessingOverlay" class="ai-processing-box" style="display: none;">
+            <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem;">
+                <div style="width: 32px; height: 32px; border-radius: 50%; background: #eff6ff; display: flex; align-items: center; justify-content: center; color: var(--primary-blue);">
+                    <span class="material-symbols-outlined icon-20">cognition</span>
+                </div>
+                <div>
+                    <h3 style="font-size: 1.05rem; color: var(--primary-navy); margin-bottom: 2px;">
+                        Analyzing your report with Google Gemini AI...
+                    </h3>
+                    <div style="font-size: 0.78rem; color: var(--text-tertiary);">
+                        Parsing vernacular text, extracting structured attributes, and assessing severity.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stepped Checklist Progress -->
+            <ul class="ai-step-list">
+                <li class="ai-step-item" id="aiStep1">
+                    <span class="material-symbols-outlined icon-18">pending</span>
+                    <span>1. Detecting language & dialect (Hindi/English)</span>
+                </li>
+                <li class="ai-step-item" id="aiStep2">
+                    <span class="material-symbols-outlined icon-18">pending</span>
+                    <span>2. Synthesizing core infrastructure problem</span>
+                </li>
+                <li class="ai-step-item" id="aiStep3">
+                    <span class="material-symbols-outlined icon-18">pending</span>
+                    <span>3. Classifying infrastructure domain & department</span>
+                </li>
+                <li class="ai-step-item" id="aiStep4">
+                    <span class="material-symbols-outlined icon-18">pending</span>
+                    <span>4. Evaluating urgency & community societal impact</span>
+                </li>
+                <li class="ai-step-item" id="aiStep5">
+                    <span class="material-symbols-outlined icon-18">pending</span>
+                    <span>5. Persisting structured record to government database</span>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Official Confirmation Receipt Card (Post-Submission) -->
+        <div id="submissionSuccessCard" style="display: none; padding: 1rem 0;">
+            <div style="text-align: center; margin-bottom: 1.5rem;">
+                <div style="width: 48px; height: 48px; border-radius: 50%; background: var(--accent-green-subtle); color: var(--accent-green); display: inline-flex; align-items: center; justify-content: center; margin-bottom: 0.75rem;">
+                    <span class="material-symbols-outlined icon-32">verified</span>
+                </div>
+                <h2 style="font-size: 1.6rem; color: var(--primary-navy); margin-bottom: 0.35rem; font-weight: 800;">
+                    Grievance Successfully Registered
+                </h2>
+                <p style="color: var(--text-secondary); font-size: 0.9rem;">
+                    आपकी शिकायत सफलतापूर्वक दर्ज कर ली गई है। Official reference generated:
+                </p>
+            </div>
+
+            <!-- Official Tracking Box -->
+            <div style="background: var(--bg-subtle); border: 2px dashed var(--primary-blue-border); border-radius: var(--radius-md); padding: 1rem; text-align: center; margin-bottom: 1.5rem;">
+                <div style="font-size: 0.75rem; text-transform: uppercase; font-weight: 700; color: var(--text-tertiary); letter-spacing: 0.05em;">
+                    Official Tracking Number / संदर्भ संख्या
+                </div>
+                <div id="receiptReportId" style="font-size: 2rem; font-weight: 800; color: var(--primary-navy); letter-spacing: 0.05em; margin: 0.25rem 0;">
+                    #JS-XXXX
+                </div>
+                <div style="font-size: 0.78rem; color: var(--accent-green); font-weight: 600;">
+                    ✓ Status: Submitted &bull; Routed to District Works Queue
+                </div>
+            </div>
+
+            <!-- AI Extracted Structured Breakdown -->
+            <div style="background: #ffffff; border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 1.25rem; margin-bottom: 1.5rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; border-bottom: 1px solid var(--border-subtle); padding-bottom: 0.5rem;">
+                    <div style="font-size: 0.82rem; font-weight: 700; color: var(--primary-navy); text-transform: uppercase;">
+                        🤖 AI Analysis & Structured Parameters
+                    </div>
+                    <span class="badge badge-category" style="font-size: 0.7rem;">Gemini Structured JSON</span>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; font-size: 0.88rem; margin-bottom: 1rem;">
+                    <div>
+                        <span style="color: var(--text-tertiary); font-size: 0.78rem; display: block;">Category:</span>
+                        <strong id="receiptCategory" style="color: var(--primary-navy);">-</strong>
+                    </div>
+                    <div>
+                        <span style="color: var(--text-tertiary); font-size: 0.78rem; display: block;">Severity / Urgency:</span>
+                        <strong id="receiptSeverity" style="color: var(--accent-red);">-</strong>
+                    </div>
+                    <div>
+                        <span style="color: var(--text-tertiary); font-size: 0.78rem; display: block;">Location / District:</span>
+                        <strong id="receiptDistrict" style="color: var(--primary-navy);">-</strong>
+                    </div>
+                    <div>
+                        <span style="color: var(--text-tertiary); font-size: 0.78rem; display: block;">Language / Timestamp:</span>
+                        <strong id="receiptMeta" style="color: var(--text-primary);">-</strong>
+                    </div>
+                </div>
+
+                <div style="background: var(--bg-canvas); border-left: 3px solid var(--primary-blue); padding: 0.75rem 1rem; border-radius: 0 var(--radius-sm) var(--radius-sm) 0; font-size: 0.85rem;">
+                    <span style="font-weight: 600; color: var(--primary-navy);">Synthesized Summary:</span>
+                    <p id="receiptSummary" style="color: var(--text-secondary); margin-top: 2px; font-style: italic;"></p>
+                </div>
+
+                <div style="font-size: 0.72rem; color: var(--text-tertiary); margin-top: 0.75rem; font-style: italic;">
+                    * Note: AI-generated analytical assessment to assist public administration — not an official government decision.
+                </div>
+            </div>
+
+            <!-- Actions Row -->
+            <div style="display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap;">
+                <a id="receiptViewBtn" href="#" class="btn btn-primary">
+                    <span class="material-symbols-outlined icon-18">description</span>
+                    <span>View Official Record</span>
+                </a>
+                <a href="{{ url_for('reports_page') }}" class="btn btn-outline">
+                    <span class="material-symbols-outlined icon-18">format_list_bulleted</span>
+                    <span>All Public Reports</span>
+                </a>
+                <button type="button" id="submitAnotherBtn" class="btn btn-secondary">
+                    <span class="material-symbols-outlined icon-18">add</span>
+                    <span>Report Another</span>
+                </button>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/citizen.js') }}"></script>
+{% endblock %}
