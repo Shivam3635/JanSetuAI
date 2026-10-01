@@ -167,9 +167,15 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="categorySelect" class="form-label">
-                        Infrastructure Category / श्रेणी:
-                    </label>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem; flex-wrap: wrap; gap: 0.5rem;">
+                        <label for="categorySelect" class="form-label" style="margin-bottom: 0;">
+                            Infrastructure Category / श्रेणी:
+                        </label>
+                        <button type="button" id="autoDetectCategoryBtn" class="btn btn-outline btn-xs" style="display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.78rem; padding: 4px 10px; border-color: var(--primary-blue); color: var(--primary-blue); border-radius: var(--radius-xs); cursor: pointer; background: #ffffff;">
+                            <span class="material-symbols-outlined icon-16" id="autoDetectBtnIcon">auto_awesome</span>
+                            <span id="autoDetectBtnText">Auto-Detect with AI</span>
+                        </button>
+                    </div>
                     <select id="categorySelect" name="category">
                         <option value="auto" selected>✨ Auto-detect with Gemini AI (स्वचालित पहचान)</option>
                         <option value="Roads">🛣️ Roads (सड़कें व पुल)</option>
@@ -183,6 +189,15 @@
                         <option value="Public Transport">🚌 Public Transport (बस व परिवहन)</option>
                         <option value="Other">📌 Other (अन्य सार्वजनिक कार्य)</option>
                     </select>
+
+                    <!-- Real-time Gemini AI Auto-Detection Feedback -->
+                    <div id="aiCategoryBadge" style="display: none; margin-top: 0.65rem; padding: 0.6rem 0.85rem; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: var(--radius-sm); font-size: 0.82rem; color: #166534; align-items: center; justify-content: space-between; gap: 0.5rem; transition: all 0.3s ease;">
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <span class="material-symbols-outlined icon-18" style="color: #16a34a;">check_circle</span>
+                            <span id="aiCategoryBadgeText">✨ Gemini AI identified: <strong>Roads</strong> &bull; Urgency: High</span>
+                        </div>
+                        <span class="badge badge-category" id="aiCategorySourceTag" style="font-size: 0.68rem; background: #dcfce7; color: #15803d; border-color: #86efac;">Gemini NLU</span>
+                    </div>
                 </div>
 
                 <!-- Submit Button -->

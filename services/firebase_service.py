@@ -14,7 +14,7 @@ import os
 import json
 import urllib.request
 import urllib.error
-from datetime import datetime
+from datetime import datetime, timezone
 
 VALID_STATUSES = [
     "Submitted",
@@ -200,7 +200,9 @@ class FirebaseService:
                     doc = json.loads(resp.read().decode('utf-8'))
                     fields = doc.get('fields', {})
                     return firestore_fields_to_dict(fields)
-            except Exception as e:
+            except urllib.error.HTTPError as he:
+                he.close()
+            except Exception:
                 # Document might not be in Firestore yet; fall back to local
                 pass
 
@@ -251,7 +253,7 @@ class FirebaseService:
         if new_status not in VALID_STATUSES:
             raise ValueError(f"Invalid status '{new_status}'. Allowed: {VALID_STATUSES}")
 
-        updated_time = datetime.utcnow().isoformat() + "Z"
+        updated_time = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
         updated_report = None
 
         # 1. Update in Cloud Firestore

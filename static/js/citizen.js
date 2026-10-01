@@ -37,6 +37,12 @@ function initCitizenPortal() {
 
     // Stepper & Submit
     const categorySelect = document.getElementById('categorySelect');
+    const autoDetectBtn = document.getElementById('autoDetectCategoryBtn');
+    const autoDetectBtnText = document.getElementById('autoDetectBtnText');
+    const autoDetectBtnIcon = document.getElementById('autoDetectBtnIcon');
+    const aiCategoryBadge = document.getElementById('aiCategoryBadge');
+    const aiCategoryBadgeText = document.getElementById('aiCategoryBadgeText');
+    const aiCategorySourceTag = document.getElementById('aiCategorySourceTag');
     const submitBtn = document.getElementById('submitReportBtn');
     const submitBtnText = document.getElementById('submitBtnText');
     const formAlert = document.getElementById('formAlert');
@@ -76,6 +82,14 @@ function initCitizenPortal() {
             const count = descriptionInput.value.length;
             if (charCount) {
                 charCount.textContent = `${count} characters`;
+            }
+
+            // Debounced real-time category detection if set to Auto-detect
+            if (categorySelect && categorySelect.value === 'auto' && count >= 12) {
+                clearTimeout(autoDetectDebounceTimer);
+                autoDetectDebounceTimer = setTimeout(() => {
+                    triggerAiCategoryDetection(false);
+                }, 1100);
             }
         });
     }
@@ -121,7 +135,7 @@ function initCitizenPortal() {
                 voiceStatusText.style.color = 'var(--accent-red)';
             }
             if (voiceSubLabel) {
-                voiceSubLabel.textContent = 'Microphone active &bull; Speak into your device';
+                voiceSubLabel.textContent = 'Microphone active • Speak into your device';
             }
             if (audioWaveform) {
                 audioWaveform.style.display = 'flex';
@@ -174,6 +188,11 @@ function initCitizenPortal() {
                     voiceSubLabel.textContent = 'Speech converted to text. You can edit the description above.';
                 }
                 showToast('Voice transcribed successfully!', 'success');
+
+                // Trigger auto-detect immediately after voice capture
+                if (categorySelect && categorySelect.value === 'auto' && descriptionInput.value.trim().length >= 8) {
+                    setTimeout(() => triggerAiCategoryDetection(false), 400);
+                }
             }
         };
 
@@ -231,7 +250,7 @@ function initCitizenPortal() {
                 voiceStatusText.style.color = 'var(--text-secondary)';
             }
             if (voiceSubLabel) {
-                voiceSubLabel.textContent = 'Browser Web Speech API &bull; No typing required';
+                voiceSubLabel.textContent = 'Browser Web Speech API • No typing required';
             }
             if (clearVoiceBtn) {
                 clearVoiceBtn.style.display = 'none';
@@ -319,6 +338,114 @@ function initCitizenPortal() {
     }
 
     // -------------------------------------------------------------------------
+    // 3b. Interactive Gemini AI Category Auto-Detection Engine
+    // -------------------------------------------------------------------------
+    let isDetectingCategory = false;
+    let autoDetectDebounceTimer = null;
+
+    async function triggerAiCategoryDetection(showNotice = false) {
+        if (isDetectingCategory) return;
+        const text = (descriptionInput ? descriptionInput.value : '').trim();
+        if (text.length < 8) {
+            if (showNotice) {
+                showToast('Please type or speak your problem description first (at least 8 characters).', 'warning');
+                if (descriptionInput) descriptionInput.focus();
+            }
+            return;
+        }
+
+        isDetectingCategory = true;
+        if (autoDetectBtn) {
+            autoDetectBtn.disabled = true;
+            if (autoDetectBtnText) autoDetectBtnText.textContent = 'Detecting...';
+            if (autoDetectBtnIcon) {
+                autoDetectBtnIcon.textContent = 'sync';
+                autoDetectBtnIcon.style.animation = 'spin 1s infinite linear';
+            }
+        }
+
+        try {
+            const lang = languageSelect ? languageSelect.value : 'Hindi';
+            const res = await fetch('/api/analyze', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text, language: lang })
+            });
+
+            const result = await res.json();
+            if (result.success && result.data) {
+                const analysis = result.data;
+                const detectedCat = analysis.category || 'Roads';
+
+                // Automatically select the option in the dropdown
+                if (categorySelect) {
+                    categorySelect.value = detectedCat;
+                    // Visual feedback highlight
+                    categorySelect.style.borderColor = 'var(--primary-blue)';
+                    categorySelect.style.boxShadow = '0 0 0 3px rgba(37, 99, 235, 0.25)';
+                    setTimeout(() => {
+                        categorySelect.style.borderColor = '';
+                        categorySelect.style.boxShadow = '';
+                    }, 2500);
+                }
+
+                // Show dynamic AI category badge
+                if (aiCategoryBadge && aiCategoryBadgeText) {
+                    aiCategoryBadge.style.display = 'flex';
+                    const sev = analysis.severity || 'Medium';
+                    const urg = analysis.urgency || sev;
+                    aiCategoryBadgeText.innerHTML = `✨ Gemini AI classified as: <strong>${detectedCat}</strong> &bull; Severity: <strong>${sev}</strong> (${urg} Urgency)`;
+                    if (aiCategorySourceTag) {
+                        aiCategorySourceTag.textContent = analysis.source === 'gemini_ai' ? 'Gemini NLU' : 'AI Heuristic';
+                    }
+                }
+
+                if (showNotice) {
+                    showToast(`✨ Category auto-detected: ${detectedCat}`, 'success');
+                }
+            } else {
+                if (showNotice) {
+                    showToast(result.error || 'Could not auto-detect category.', 'warning');
+                }
+            }
+        } catch (err) {
+            console.error('AI Auto-detect error:', err);
+            if (showNotice) {
+                showToast('AI analysis service temporarily unavailable.', 'error');
+            }
+        } finally {
+            isDetectingCategory = false;
+            if (autoDetectBtn) {
+                autoDetectBtn.disabled = false;
+                if (autoDetectBtnText) autoDetectBtnText.textContent = 'Auto-Detect with AI';
+                if (autoDetectBtnIcon) {
+                    autoDetectBtnIcon.textContent = 'auto_awesome';
+                    autoDetectBtnIcon.style.animation = 'none';
+                }
+            }
+        }
+    }
+
+    if (autoDetectBtn) {
+        autoDetectBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            triggerAiCategoryDetection(true);
+        });
+    }
+
+    if (categorySelect) {
+        categorySelect.addEventListener('change', () => {
+            if (categorySelect.value === 'auto') {
+                triggerAiCategoryDetection(true);
+            } else {
+                if (aiCategoryBadge) {
+                    aiCategoryBadge.style.display = 'none';
+                }
+            }
+        });
+    }
+
+    // -------------------------------------------------------------------------
     // 4. Stepped Gemini AI Submission & Async Backend Call
     // -------------------------------------------------------------------------
     form.addEventListener('submit', async (e) => {
@@ -377,6 +504,7 @@ function initCitizenPortal() {
         .then(async res => {
             const data = await res.json();
             if (!res.ok || !data.success) throw new Error(data.error || 'Submission failed');
+            apiResult = data.data;
             return data.data;
         })
         .catch(err => { apiError = err; });
@@ -450,11 +578,34 @@ function initCitizenPortal() {
         if (successCard) {
             successCard.style.display = 'block';
             const repId = reportData.report_id || `JS-${Math.floor(1000 + Math.random() * 9000)}`;
+            const finalCat = (reportData.category && reportData.category !== 'auto')
+                ? reportData.category
+                : (payload.category !== 'auto' ? payload.category : 'Roads');
+
             if (receiptReportId) receiptReportId.textContent = `#${repId}`;
-            if (receiptCategory) receiptCategory.textContent = reportData.category || 'Roads';
+            if (receiptCategory) receiptCategory.textContent = finalCat;
             if (receiptSeverity) receiptSeverity.textContent = `${reportData.severity || 'High'} (${reportData.urgency || 'High'} Urgency)`;
             if (receiptDistrict) receiptDistrict.textContent = `${reportData.district || 'Prayagraj'}, Uttar Pradesh`;
-            if (receiptMeta) receiptMeta.textContent = `${reportData.language || 'Hindi'} &bull; Just now`;
+            if (receiptMeta) {
+                const lang = reportData.language || 'Hindi';
+                let timeDisplay = 'Just now';
+                if (reportData.created_at) {
+                    try {
+                        const d = new Date(reportData.created_at);
+                        if (!isNaN(d.getTime())) {
+                            timeDisplay = d.toLocaleString('en-IN', {
+                                day: '2-digit',
+                                month: 'short',
+                                year: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit',
+                                hour12: true
+                            });
+                        }
+                    } catch (e) {}
+                }
+                receiptMeta.innerHTML = `${lang} &bull; ${timeDisplay}`;
+            }
             if (receiptSummary) receiptSummary.textContent = `"${reportData.problem_summary || reportData.description || payload.description}"`;
             if (receiptViewBtn) receiptViewBtn.href = `/reports/${repId}`;
 
@@ -475,6 +626,7 @@ function initCitizenPortal() {
             if (latDisplay) latDisplay.textContent = '25.4358° N';
             if (lonDisplay) lonDisplay.textContent = '81.8463° E';
             if (successCard) successCard.style.display = 'none';
+            if (aiCategoryBadge) aiCategoryBadge.style.display = 'none';
             form.style.display = 'block';
             hideAlert();
             window.scrollTo({ top: 0, behavior: 'smooth' });

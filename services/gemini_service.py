@@ -32,10 +32,79 @@ ALLOWED_CATEGORIES = [
 ALLOWED_SEVERITIES = ["Low", "Medium", "High", "Critical"]
 ALLOWED_URGENCIES = ["Low", "Medium", "High", "Critical"]
 
+CATEGORY_SYNONYMS = {
+    "road": "Roads",
+    "roads": "Roads",
+    "pothole": "Roads",
+    "potholes": "Roads",
+    "street": "Roads",
+    "highway": "Roads",
+    "bridge": "Roads",
+    "water": "Drinking Water",
+    "drinking water": "Drinking Water",
+    "drinking_water": "Drinking Water",
+    "water supply": "Drinking Water",
+    "pipeline": "Drinking Water",
+    "handpump": "Drinking Water",
+    "health": "Healthcare",
+    "healthcare": "Healthcare",
+    "hospital": "Healthcare",
+    "clinic": "Healthcare",
+    "medical": "Healthcare",
+    "doctor": "Healthcare",
+    "ambulance": "Healthcare",
+    "school": "Education",
+    "education": "Education",
+    "college": "Education",
+    "teacher": "Education",
+    "electricity": "Electricity",
+    "power": "Electricity",
+    "power cut": "Electricity",
+    "transformer": "Electricity",
+    "electric": "Electricity",
+    "voltage": "Electricity",
+    "wire": "Electricity",
+    "sanitation": "Sanitation",
+    "garbage": "Sanitation",
+    "waste": "Sanitation",
+    "cleanliness": "Sanitation",
+    "trash": "Sanitation",
+    "drain": "Drainage",
+    "drainage": "Drainage",
+    "sewer": "Drainage",
+    "sewage": "Drainage",
+    "waterlogging": "Drainage",
+    "internet": "Digital Connectivity",
+    "connectivity": "Digital Connectivity",
+    "digital": "Digital Connectivity",
+    "digital connectivity": "Digital Connectivity",
+    "network": "Digital Connectivity",
+    "mobile network": "Digital Connectivity",
+    "tower": "Digital Connectivity",
+    "bus": "Public Transport",
+    "transport": "Public Transport",
+    "public transport": "Public Transport",
+    "transit": "Public Transport"
+}
+
+def normalize_category(raw_category):
+    if not raw_category:
+        return "Other"
+    clean = str(raw_category).strip().lower()
+    for cat in ALLOWED_CATEGORIES:
+        if clean == cat.lower():
+            return cat
+    if clean in CATEGORY_SYNONYMS:
+        return CATEGORY_SYNONYMS[clean]
+    for syn, canonical in CATEGORY_SYNONYMS.items():
+        if syn in clean:
+            return canonical
+    return "Other"
+
 class GeminiService:
-    def __init__(self, api_key=None, model="gemini-1.5-flash"):
+    def __init__(self, api_key=None, model=None):
         self.api_key = api_key or os.getenv('GEMINI_API_KEY', '').strip()
-        self.model = model
+        self.model = model or os.getenv('GEMINI_MODEL', 'gemini-3-flash-preview').strip()
 
     def analyze_complaint(self, text, user_language=None):
         """
@@ -105,27 +174,43 @@ class GeminiService:
             }
         }
 
+        models_to_try = [self.model]
+        for fallback_m in ["gemini-3-flash-preview", "gemini-3.1-flash-lite-preview"]:
+            if fallback_m not in models_to_try:
+                models_to_try.append(fallback_m)
+
         headers = {"Content-Type": "application/json"}
-        response = requests.post(endpoint, json=payload, headers=headers, timeout=12)
+        last_error = None
 
-        if response.status_code != 200:
-            raise RuntimeError(f"Gemini API returned HTTP {response.status_code}: {response.text}")
+        for current_model in models_to_try:
+            endpoint = f"https://generativelanguage.googleapis.com/v1beta/models/{current_model}:generateContent?key={self.api_key}"
+            try:
+                response = requests.post(endpoint, json=payload, headers=headers, timeout=12)
+                if response.status_code == 200:
+                    self.model = current_model
+                    res_data = response.json()
+                    candidates = res_data.get("candidates", [])
+                    if not candidates:
+                        raise RuntimeError("Gemini returned no candidates.")
 
-        res_data = response.json()
-        candidates = res_data.get("candidates", [])
-        if not candidates:
-            raise RuntimeError("Gemini returned no candidates.")
+                    raw_text = candidates[0].get("content", {}).get("parts", [{}])[0].get("text", "").strip()
+                    raw_text = re.sub(r"^```json\s*", "", raw_text)
+                    raw_text = re.sub(r"^```\s*", "", raw_text)
+                    raw_text = re.sub(r"\s*```$", "", raw_text)
 
-        raw_text = candidates[0].get("content", {}).get("parts", [{}])[0].get("text", "").strip()
+                    parsed = json.loads(raw_text)
+                    return self._validate_and_sanitize(parsed, text, source="gemini_ai")
+                elif response.status_code in (404, 503):
+                    last_error = f"Model {current_model} returned {response.status_code}: {response.text}"
+                    continue
+                else:
+                    raise RuntimeError(f"Gemini API returned HTTP {response.status_code}: {response.text}")
+            except Exception as e:
+                last_error = str(e)
+                continue
 
-        # Parse JSON from response
-        # Clean any accidental code fences if present
-        raw_text = re.sub(r"^```json\s*", "", raw_text)
-        raw_text = re.sub(r"^```\s*", "", raw_text)
-        raw_text = re.sub(r"\s*```$", "", raw_text)
-
-        parsed = json.loads(raw_text)
-        return self._validate_and_sanitize(parsed, text, source="gemini_ai")
+        if last_error:
+            raise RuntimeError(last_error)
 
     def _fallback_analysis(self, text, user_language=None):
         """
@@ -268,17 +353,18 @@ class GeminiService:
 
     def _validate_and_sanitize(self, data, original_text, source="gemini_ai"):
         """Validates output fields against GovTech specifications."""
-        category = data.get("category")
-        if category not in ALLOWED_CATEGORIES:
-            category = "Other"
+        category = normalize_category(data.get("category"))
+        if category == "Other":
+            # Check if original text has a clear heuristic category
+            fallback_res = self._fallback_analysis(original_text)
+            if fallback_res.get("category") and fallback_res.get("category") != "Other":
+                category = fallback_res.get("category")
 
-        severity = data.get("severity")
-        if severity not in ALLOWED_SEVERITIES:
-            severity = "Medium"
+        raw_sev = str(data.get("severity") or "").strip().capitalize()
+        severity = raw_sev if raw_sev in ALLOWED_SEVERITIES else "Medium"
 
-        urgency = data.get("urgency")
-        if urgency not in ALLOWED_URGENCIES:
-            urgency = severity
+        raw_urg = str(data.get("urgency") or "").strip().capitalize()
+        urgency = raw_urg if raw_urg in ALLOWED_URGENCIES else severity
 
         language = data.get("language") or "Hindi"
         if language not in ["Hindi", "English"]:

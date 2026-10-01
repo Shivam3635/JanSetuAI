@@ -191,7 +191,15 @@ def create_report_api():
         ai_analysis = gemini_service.analyze_complaint(description, language)
 
         # Use AI-detected category if citizen selected 'auto'
-        final_category = category if category not in ('auto', '', None) else ai_analysis.get('category', 'Other')
+        detected_category = ai_analysis.get('category')
+        if not detected_category or detected_category in ('auto', 'Other'):
+            fallback_detected = gemini_service._fallback_analysis(description, language).get('category')
+            if fallback_detected and fallback_detected != 'Other':
+                detected_category = fallback_detected
+            elif not detected_category:
+                detected_category = 'Other'
+
+        final_category = category if category not in ('auto', '', None) else detected_category
 
         all_reports = firebase_service.get_reports()
         report_id = f"JS-{1000 + len(all_reports) + 1}"

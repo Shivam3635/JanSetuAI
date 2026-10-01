@@ -3,7 +3,7 @@ JanSetu AI - Helper Utilities
 Reusable helper functions for formatting, JSON responses, and date handling.
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from flask import jsonify
 
 def api_response(success=True, data=None, message=None, error=None, status_code=200):
@@ -27,5 +27,5 @@ def format_timestamp(dt=None):
     Returns ISO 8601 formatted timestamp string.
     """
     if dt is None:
-        dt = datetime.utcnow()
-    return dt.isoformat() + "Z"
+        dt = datetime.now(timezone.utc)
+    return dt.isoformat().replace("+00:00", "Z")
